@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node dev.mjs"
+    "dev": "node --env-file=.env.local dev.mjs",
+    "prerender": "node --env-file=.env.local scripts/prerender.mjs"
   },
   "engines": {
     "node": ">=20"

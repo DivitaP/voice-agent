@@ -1,0 +1,18 @@
+{
+  "b745ea8fa6e22597": "greeting",
+  "c83e1b4ae86a12fc": "askName",
+  "f79683cf760edac9": "askDob",
+  "36c0bbda2aea089a": "reaskDob",
+  "d07eeb64ee409898": "noMatch",
+  "3d2158bb8fe5f84d": "verifyFail",
+  "97dc3b23361b4e91": "emergency",
+  "d26f9365e37e1848": "human",
+  "2f04eeb0ed7a79ae": "menu",
+  "97dcfcb1341636bc": "whichMed",
+  "0c744b005b1a9397": "medNotFound",
+  "8b75493b590d41d5": "refillCancel",
+  "77c00b08c1795106": "whichSlot",
+  "53e71282a9d8a96a": "otherSlot",
+  "887b4a2665a9029b": "goodbye",
+  "583a49de56aedbaa": "bye"
+}

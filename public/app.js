@@ -4,6 +4,7 @@
 const $ = (id) => document.getElementById(id);
 const log = $("log"), statusEl = $("status");
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const player = new Audio();
 
 let callState = null;
 let ended = false;
@@ -20,17 +21,30 @@ function bubble(text, who, cls = "") {
 
 function setStatus(s) { statusEl.textContent = s; }
 
-function speak(text) {
+async function speak(text) {
+  const t = performance.now();
+  const r = await fetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+
   return new Promise((resolve) => {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.05;
-    const t = performance.now();
-    let started = null;
-    u.onstart = () => { started = performance.now(); setStatus("agent speaking"); resolve({ startedAt: started, tts_start_ms: started - t }); };
-    u.onend = () => setStatus(ended ? "call ended" : "your turn");
-    u.onerror = () => { if (!started) resolve({ startedAt: performance.now(), tts_start_ms: null }); };
-    speechSynthesis.speak(u);
+    player.onplaying = () => {
+      const startedAt = performance.now();
+      setStatus("agent speaking");
+      resolve({
+        startedAt,
+        tts_start_ms: startedAt - t,
+        server_tts_ms: +r.headers.get("x-tts-ms"),
+        cache: r.headers.get("x-cache"),
+      });
+    };
+    player.onended = () => { URL.revokeObjectURL(url); setStatus(ended ? "call ended" : "your turn"); };
+    player.src = url;
+    player.play();
   });
 }
 
@@ -72,6 +86,8 @@ async function turn(text, endOfSpeech, stt_ms) {
     ttfa_ms: tts.startedAt - endOfSpeech,
     source: r.source,
     text,
+    cache: tts.cache, 
+    server_tts_ms: tts.server_tts_ms,
   };
   metrics.push(m);
   render();
@@ -86,7 +102,8 @@ let rec = null, interimEl = null, releasedAt = 0;
 
 function startListening() {
   if (!SR || ended) return;
-  speechSynthesis.cancel(); // caller can talk over the agent
+  // speechSynthesis.cancel(); // caller can talk over the agent
+  player.pause()
   rec = new SR();
   rec.lang = "en-US";
   rec.interimResults = true;
@@ -143,7 +160,7 @@ function render() {
   $("p95").textContent = fmt(pct(ttfa, 95));
   $("turns").textContent = metrics.length;
   $("rows").innerHTML = metrics.map((m) =>
-    `<tr><td>${m.turn}</td><td>${fmt(m.stt_ms)}</td><td>${fmt(m.nlu_ms)}</td><td>${fmt(m.network_ms)}</td><td>${fmt(m.tts_start_ms)}</td><td><b>${fmt(m.ttfa_ms)}</b></td><td>${m.source || ""}</td></tr>`
+    `<tr><td>${m.turn}</td><td>${fmt(m.stt_ms)}</td><td>${fmt(m.nlu_ms)}</td><td>${fmt(m.network_ms)}</td><td>${fmt(m.tts_start_ms)}</td><td><b>${fmt(m.ttfa_ms)}</b></td><td>${m.source || ""}</td><td>${m.server_tts_ms || ""}</td><td>${m.cache || ""}</td></tr>`
   ).join("");
 }
 

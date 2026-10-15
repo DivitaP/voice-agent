@@ -1,0 +1,122 @@
+[
+  {
+    "turn": 1,
+    "stt_ms": null,
+    "nlu_ms": 1.2,
+    "network_ms": 12.5,
+    "tts_start_ms": 28.399999998509884,
+    "ttfa_ms": 42.69999999552965,
+    "source": "rules",
+    "text": "my name is Maria Alvarez",
+    "cache": "L0",
+    "server_tts_ms": 0
+  },
+  {
+    "turn": 2,
+    "stt_ms": null,
+    "nlu_ms": 1.3,
+    "network_ms": 10.100000001490116,
+    "tts_start_ms": 3471.10000000149,
+    "ttfa_ms": 3482.7000000029802,
+    "source": "rules",
+    "text": "March 4th, 1958",
+    "cache": "PHI",
+    "server_tts_ms": 3435
+  },
+  {
+    "turn": 3,
+    "stt_ms": null,
+    "nlu_ms": 0.2,
+    "network_ms": 8.600000001490116,
+    "tts_start_ms": 3092.2999999970198,
+    "ttfa_ms": 3102.5,
+    "source": "rules",
+    "text": "I need a refill on my metformin",
+    "cache": "MISS",
+    "server_tts_ms": 1439
+  },
+  {
+    "turn": 4,
+    "stt_ms": null,
+    "nlu_ms": 0.1,
+    "network_ms": 4.199999995529652,
+    "tts_start_ms": 2100.39999999851,
+    "ttfa_ms": 2105.60000000149,
+    "source": "rules",
+    "text": "yes",
+    "cache": "MISS",
+    "server_tts_ms": 1677
+  },
+  {
+    "turn": 5,
+    "stt_ms": null,
+    "nlu_ms": 0.1,
+    "network_ms": 7.4000000059604645,
+    "tts_start_ms": 31.30000000447035,
+    "ttfa_ms": 40.400000005960464,
+    "source": "rules",
+    "text": "no thanks",
+    "cache": "L0",
+    "server_tts_ms": 0
+  },
+  {
+    "turn": 6,
+    "stt_ms": null,
+    "nlu_ms": 0.1,
+    "network_ms": 8.399999998509884,
+    "tts_start_ms": 27,
+    "ttfa_ms": 36.70000000298023,
+    "source": "rules",
+    "text": "my name is Maria Alvarez",
+    "cache": "L0",
+    "server_tts_ms": 0
+  },
+  {
+    "turn": 7,
+    "stt_ms": null,
+    "nlu_ms": 0.4,
+    "network_ms": 8.300000004470348,
+    "tts_start_ms": 2348.5,
+    "ttfa_ms": 2358.10000000149,
+    "source": "rules",
+    "text": "March 4th, 1958",
+    "cache": "PHI",
+    "server_tts_ms": 2314
+  },
+  {
+    "turn": 8,
+    "stt_ms": null,
+    "nlu_ms": 0.2,
+    "network_ms": 9.100000001490116,
+    "tts_start_ms": 277.1000000014901,
+    "ttfa_ms": 287.90000000596046,
+    "source": "rules",
+    "text": "I need a refill on my metformin",
+    "cache": "L1",
+    "server_tts_ms": 0
+  },
+  {
+    "turn": 9,
+    "stt_ms": null,
+    "nlu_ms": 0.1,
+    "network_ms": 8,
+    "tts_start_ms": 258.90000000596046,
+    "ttfa_ms": 268.30000000447035,
+    "source": "rules",
+    "text": "yes",
+    "cache": "L1",
+    "server_tts_ms": 0
+  },
+  {
+    "turn": 10,
+    "stt_ms": null,
+    "nlu_ms": 0.2,
+    "network_ms": 7.600000001490116,
+    "tts_start_ms": 27.899999998509884,
+    "ttfa_ms": 37.29999999701977,
+    "source": "rules",
+    "text": "no thanks",
+    "cache": "L0",
+    "server_tts_ms": 0
+  }
+]

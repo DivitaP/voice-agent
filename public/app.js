@@ -21,12 +21,13 @@ function bubble(text, who, cls = "") {
 
 function setStatus(s) { statusEl.textContent = s; }
 
-async function speak(text, audioUrl) {
+async function speak(text, audioUrl, phi = true) {
   const t = performance.now();
   let url, r, cache;
 
   if (audioUrl && !CACHE_OFF) {
-    url = audioUrl; cache = "L0";
+    url = audioUrl;                 // L0: pre-rendered CDN file
+    cache = "L0";
   } else {
     r = await fetch("/api/tts", {
       method: "POST",
@@ -49,7 +50,7 @@ async function speak(text, audioUrl) {
       });
     };
     player.onended = () => {
-      if (!audioUrl) URL.revokeObjectURL(url);
+      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
       setStatus(ended ? "call ended" : "your turn");
     };
     player.src = url;
@@ -74,6 +75,7 @@ async function startCall() {
   $("text").disabled = false;
   $("typed").querySelector("button").disabled = false;
   if (!SR) setStatus("speech recognition not supported in this browser — type instead");
+  setStatus(CACHE_OFF ? "cache OFF (baseline)" : "cache ON");
   await speak(r.say, r.audio, false);
 }
 

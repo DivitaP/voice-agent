@@ -1,8 +1,10 @@
-// POST /api/turn  { state, text }  ->  { state, say, audio?, cache, nlu, source, timings }
+// POST /api/turn  { state, text }  ->  { state, say, phi, audio?, cache, nlu, source, timings }
 import { extract } from "../lib/nlu.js";
 import { step, initialState, GREETING } from "../lib/flow.js";
 import { audioKey } from "../lib/audio-key.js";
-import manifest from "../lib/l0-manifest.json" with { type: "json" };
+import { readFileSync } from "node:fs";
+
+const manifest = JSON.parse(readFileSync(new URL("../lib/l0-manifest.json", import.meta.url)));
 
 // L0 lookup: if this exact reply was pre-rendered, point the browser at the CDN file.
 function withAudio(say) {
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       state: initialState(),
       say: GREETING,
+      phi: false,
       ...withAudio(GREETING),
       timings: {},
     });
@@ -28,11 +31,12 @@ export default async function handler(req, res) {
   const t0 = performance.now();
   const { nlu, source } = await extract(body.text || "");
   const t1 = performance.now();
-  const { state, say } = step(body.state || initialState(), body.text || "", nlu);
+  const { state, say, phi } = step(body.state || initialState(), body.text || "", nlu);
   const t2 = performance.now();
 
   res.status(200).json({
     state, say, nlu, source,
+    phi: !!phi,
     ...withAudio(say),
     timings: { nlu_ms: +(t1 - t0).toFixed(1), flow_ms: +(t2 - t1).toFixed(1) },
   });

@@ -5,8 +5,6 @@ import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import handler from "./api/turn.js";
 import ttsHandler from "./api/tts.js";
-import { readFileSync } from "node:fs";
-const manifest = JSON.parse(readFileSync(new URL("../lib/l0-manifest.json", import.meta.url)));
 
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".mp3": "audio/mpeg" };
 

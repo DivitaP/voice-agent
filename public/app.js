@@ -1,6 +1,6 @@
 // Client: push-to-talk STT (Web Speech API) → /api/turn → speechSynthesis TTS.
 // Each turn records: stt_ms, nlu_ms, network_ms, tts_start_ms, ttfa_ms.
-
+const CACHE_OFF = new URLSearchParams(location.search).get("cache") === "off";
 const $ = (id) => document.getElementById(id);
 const log = $("log"), statusEl = $("status");
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -21,15 +21,21 @@ function bubble(text, who, cls = "") {
 
 function setStatus(s) { statusEl.textContent = s; }
 
-async function speak(text) {
+async function speak(text, audioUrl) {
   const t = performance.now();
-  const r = await fetch("/api/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  const blob = await r.blob();
-  const url = URL.createObjectURL(blob);
+  let url, r, cache;
+
+  if (audioUrl && !CACHE_OFF) {
+    url = audioUrl; cache = "L0";
+  } else {
+    r = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, phi, cache: CACHE_OFF ? "off" : "on" }),
+    });
+    url = URL.createObjectURL(await r.blob());
+    cache = r.headers.get("x-cache");
+  }
 
   return new Promise((resolve) => {
     player.onplaying = () => {
@@ -38,11 +44,14 @@ async function speak(text) {
       resolve({
         startedAt,
         tts_start_ms: startedAt - t,
-        server_tts_ms: +r.headers.get("x-tts-ms"),
-        cache: r.headers.get("x-cache"),
+        server_tts_ms: r ? +r.headers.get("x-tts-ms") : 0,
+        cache,
       });
     };
-    player.onended = () => { URL.revokeObjectURL(url); setStatus(ended ? "call ended" : "your turn"); };
+    player.onended = () => {
+      if (!audioUrl) URL.revokeObjectURL(url);
+      setStatus(ended ? "call ended" : "your turn");
+    };
     player.src = url;
     player.play();
   });
@@ -65,7 +74,7 @@ async function startCall() {
   $("text").disabled = false;
   $("typed").querySelector("button").disabled = false;
   if (!SR) setStatus("speech recognition not supported in this browser — type instead");
-  await speak(r.say);
+  await speak(r.say, r.audio, false);
 }
 
 async function turn(text, endOfSpeech, stt_ms) {
@@ -76,7 +85,7 @@ async function turn(text, endOfSpeech, stt_ms) {
   callState = r.state;
   ended = !!r.state.ended;
   bubble(r.say, "agent");
-  const tts = await speak(r.say);
+  const tts = await speak(r.say, r.audio, r.phi);
   const m = {
     turn: metrics.length + 1,
     stt_ms: stt_ms ?? null,
@@ -86,7 +95,7 @@ async function turn(text, endOfSpeech, stt_ms) {
     ttfa_ms: tts.startedAt - endOfSpeech,
     source: r.source,
     text,
-    cache: tts.cache, 
+    cache: tts.cache,
     server_tts_ms: tts.server_tts_ms,
   };
   metrics.push(m);

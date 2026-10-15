@@ -1,6 +1,6 @@
 // POST /api/tts  { text }  ->  audio/mpeg
 // Baseline: synthesizes every request (no cache yet).
-
+import { TTS_MODEL, normalize } from "../lib/audio-key.js";
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text: normalize(text) }),
   });
   
 

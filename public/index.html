@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clinic Voice Agent</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Clinic Voice Agent <span class="tag">baseline</span></h1>
+    <p class="sub">Browser STT → deterministic flow (+ optional LLM extraction) → browser TTS. Every turn is timed.</p>
+  </header>
+
+  <main>
+    <section class="card call">
+      <div class="controls">
+        <button id="start">Start call</button>
+        <button id="mic" disabled>🎙 Hold to talk</button>
+        <span id="status" class="status">idle</span>
+      </div>
+      <div id="log" class="log" aria-live="polite"></div>
+      <form id="typed">
+        <input id="text" placeholder="Or type what the caller says…" autocomplete="off" disabled />
+        <button disabled>Send</button>
+      </form>
+      <details class="hint">
+        <summary>Demo patients</summary>
+        <p>Maria Alvarez · March 4, 1958 · metformin, lisinopril · Dr. Patel</p>
+        <p>James Okafor · November 22, 1971 · atorvastatin, levothyroxine · Dr. Nguyen</p>
+      </details>
+    </section>
+
+    <section class="card metrics">
+      <h2>Turn latency</h2>
+      <div class="kpis">
+        <div><span id="p50">–</span><label>TTFA p50 (ms)</label></div>
+        <div><span id="p95">–</span><label>TTFA p95 (ms)</label></div>
+        <div><span id="turns">0</span><label>turns</label></div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>STT</th><th>NLU</th><th>Network</th><th>TTS start</th><th>TTFA</th><th>src</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="note">TTFA = end of caller speech (or Send) → agent audio starts.</p>
+      <button id="export" class="ghost">Export metrics JSON</button>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

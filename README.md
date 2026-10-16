@@ -34,6 +34,43 @@ I split replies into three buckets:
 
 That last row matters a lot in healthcare (see PHI below). I'd rather pay 2 seconds on that one line than store a patient's name in a shared cache.
 
+## Where the AI is
+
+| Step | What it does | What runs it |
+|---|---|---|
+| Speech to text | Turns the caller's voice into text | Browser speech recognition (ML model) |
+| Understanding (NLU) | Turns messy text into clean fields like `{intent: "refill", medication: "metformin"}` | LLM (`gpt-oss-20b` on Groq), with simple rules as a backup |
+| Deciding the reply | Picks exactly what the agent says next | Plain code (a state machine), on purpose |
+| Text to speech | Turns the reply into a natural voice | Deepgram Aura (neural TTS) |
+
+The idea is: **the AI understands, the code decides what to say.** The LLM never writes the reply. It only pulls out the fields, and the code picks the sentence.
+
+That's also the reason the cache works at all. If an LLM wrote every reply, no two replies would match word for word and there would be nothing to reuse. Because the code controls the wording, 84% of replies are reusable.
+
+### Why I added the LLM
+
+I first used simple keyword rules for understanding. They work if you say things the "expected" way, but break pretty fast with how people actually talk. I tested the same phrases on both:
+
+| What the caller said | Rules got | LLM got |
+|---|---|---|
+| "march fourth nineteen fifty eight" | nothing | `dob: 1958-03-04` |
+| "can I come in to see the doctor" | nothing | `intent: schedule` |
+| "yeah hi it's maria alvarez" | name, plus a wrong `yes` (from "yeah") | name only |
+| "I'm running low on my metformin" | refill, plus a wrong name ("running low") | refill + metformin |
+| "3/4/1958", "the second one works" | correct | correct |
+
+So rules either miss natural phrasing or pick up things that aren't there.
+
+### Keeping the LLM in check
+
+I don't trust the LLM output directly. Three guards:
+
+- **Validation:** only known intents, known medications, and a proper `YYYY-MM-DD` date are accepted. Anything else gets dropped.
+- **Step filter:** each step only accepts the fields that make sense there. At the "should I book it?" step, only yes/no counts. Early on, the LLM kept adding extra fields (like an intent when the caller just said "sure"), and this removed them.
+- **Timeout + fallback:** if the LLM takes more than 1.5 s or errors out, it falls back to the rules, so a call never gets stuck.
+
+The LLM adds about 200–600 ms per turn (around 320 ms typical) compared to ~1 ms for rules. That's a real cost, but a TTS miss was ~2 s, so caching still matters more. With the LLM on, a cached turn is roughly 320 ms + ~250 ms instead of 320 ms + ~2 s.
+
 ## Terms, in plain words
 
 - **TTS (text-to-speech):** turns the agent's text into spoken audio. I use Deepgram for this.
@@ -42,6 +79,8 @@ That last row matters a lot in healthcare (see PHI below). I'd rather pay 2 seco
 - **Cache hit / miss:** a hit means we already had the audio saved. A miss means we had to generate it.
 - **L0:** audio files I generate before deploying. They're served straight from Vercel's CDN, so a hit doesn't even touch my server.
 - **L1:** audio saved in Redis (a fast key-value store, I'm using Upstash) the first time it's generated. Every caller after that gets the saved copy.
+- **NLU (natural language understanding):** the step that figures out what the caller means and turns it into fields the code can use.
+- **LLM (large language model):** the AI model that does the understanding here. It's good with messy, natural phrasing, but slower than rules.
 - **PHI (Protected Health Information):** anything that ties a real person to their healthcare, like their name and DOB on a clinic call. HIPAA has strict rules about storing it. By never caching anything that contains PHI, the cache stays out of that problem completely.
 
 ## How it works
@@ -96,6 +135,8 @@ Steps:
 
 Both runs were on the live Vercel site, so they're on the same infrastructure.
 
+These runs used the rules for understanding (not the LLM), so the numbers only show the TTS change. With the LLM on, add roughly 320 ms to every turn in both columns.
+
 ## Results
 
 Same 3 calls (19 turns), live site, cached run done after one warm-up pass.
@@ -124,6 +165,8 @@ Raw numbers are in `bench/live-baseline.json` and `bench/live-cached.json`.
 2. **Pre-warm the cache overnight,** e.g. generate tomorrow's appointment slot audio at night so the first caller of the day gets a hit too.
 3. **Stream the audio** instead of waiting for the whole file, so misses start playing sooner.
 4. **Don't make misses wait on the Redis write** (Vercel's `waitUntil`).
+5. **Swap browser speech recognition for Whisper** (also on Groq) for better accuracy on drug names and dates.
+6. **Let the LLM understand day names** for slots ("the Friday one"), not just first/second/third.
 
 ## Run it yourself
 
@@ -132,6 +175,8 @@ Raw numbers are in `bench/live-baseline.json` and `bench/live-cached.json`.
 DEEPGRAM_API_KEY=...
 KV_REST_API_URL=...
 KV_REST_API_TOKEN=...
+GROQ_API_KEY=...            # optional; without it, rules are used
+GROQ_MODEL=openai/gpt-oss-20b
 
 npm run prerender   # generate the L0 audio files once
 npm run dev         # http://localhost:3000
@@ -145,3 +190,7 @@ Demo patients (fake data):
 | James Okafor | November 22, 1971 | atorvastatin, levothyroxine | Dr. Nguyen |
 
 Try: "my name is Maria Alvarez" → "March 4th, 1958" → "I need a refill on my metformin".
+
+Or talk more naturally: "yeah hi it's maria alvarez" → "march fourth nineteen fifty eight" → "I'm running low on my metformin".
+
+To compare rules vs the LLM yourself: `node --env-file=.env.local scripts/test-nlu.mjs`
